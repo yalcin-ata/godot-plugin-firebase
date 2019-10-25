@@ -5,6 +5,8 @@ I adjusted this plugin so it works with the new Android plugin system for Godot 
 
 Steps to follow to make this plugin work:
 
+- download and start Godot 3.2 (alpha 3 or greater). No need to build it on your own (compile, ...).
+
 - in Godot with your project opened select 'Project > Install Android Build Template'. This will install the files in your project's directory (by adding android/...)
 
 - git clone https://github.com/mrcrb/godot-plugin-sql in [GODOT-PROJECT]/android/ (for this plugin no further configuration is needed)

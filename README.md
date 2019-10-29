@@ -17,6 +17,8 @@ Steps to follow to make this plugin work:
 
 - for AdMob edit `[GODOT-PROJECT]/android/godot-plugin-firebase/assets/godot-firebase-config.json` to match your needs
   - currently only AdMob and Analytics is working. I removed other services from the Java code (as I was interested only in those two services).
+  - to test ads with test ad IDs set `"TestAds" : true`
+    - setting this to true ignores the IDs (`BannerAdId`, `InterstitialAdId`, `RewardedVideoAdId`) and fetches [official AdMob test ads](https://developers.google.com/admob/android/test-ads)
 
 - edit `[GODOT-PROJECT]/android/godot-plugin-firebase/gradle.conf`
   - if you are not interested in AdMob's mediation feature (with Unity ads), comment out following two lines from `[GODOT-PROJECT]/android/godot-plugin-firebase/gradle.conf` (just put two slashes at the beginning of the lines -> //)

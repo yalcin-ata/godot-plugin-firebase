@@ -1,12 +1,12 @@
 /**
  * Copyright 2017 FrogSquare. All Rights Reserved.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,54 +17,58 @@
 package org.godotengine.godot;
 
 import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
 import android.graphics.Color;
-import android.net.Uri;
-import android.os.Bundle;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.FrameLayout;
+
 import androidx.annotation.NonNull;
 
+import com.godot.game.R;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.AdSize;
-import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.InterstitialAd;
-import com.google.android.gms.ads.reward.RewardedVideoAd;
-import com.google.android.gms.ads.rewarded.RewardedAdCallback;
-import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
+import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.rewarded.RewardItem;
 import com.google.android.gms.ads.rewarded.RewardedAd;
-
+import com.google.android.gms.ads.rewarded.RewardedAdCallback;
+import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
 import com.google.firebase.FirebaseApp;
 
-import com.godot.game.BuildConfig;
-import com.godot.game.R;
-
-import org.godotengine.godot.Godot;
-import org.godotengine.godot.Utils;
 import org.godotengine.godot.Dictionary;
-
+import org.godotengine.godot.Utils;
 import org.json.JSONObject;
-import org.json.JSONException;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 //import java.util.Dictionary;
 
 public class AdMob {
 
+	private static Activity activity = null;
+	private static AdMob mInstance = null;
+	private static Dictionary rewarded_meta_data = null;
 	FrameLayout layout = null;
+	private int reload_count = 0;
+	private boolean mAdRewardLoaded = false;
+	private boolean mAdViewLoaded = false;
+	private HashMap<String, RewardedAd> reward_ads = null;
+	private AdView mAdView = null;
+	private InterstitialAd mInterstitialAd = null;
+	private Dictionary mAdSize = null;
+	private FirebaseApp mFirebaseApp = null;
+	private JSONObject AdMobConfig = null;
 
-	public static AdMob getInstance (Activity p_activity) {
+	public AdMob(Activity p_activity) {
+		activity = p_activity;
+	}
+
+	public static AdMob getInstance(Activity p_activity) {
 		if (mInstance == null) {
 			mInstance = new AdMob(p_activity);
 		}
@@ -72,11 +76,7 @@ public class AdMob {
 		return mInstance;
 	}
 
-	public AdMob(Activity p_activity) {
-		activity = p_activity;
-	}
-
-	public void init (FirebaseApp firebaseApp, FrameLayout layout) {
+	public void init(FirebaseApp firebaseApp, FrameLayout layout) {
 
 		this.layout = layout;
 
@@ -85,8 +85,12 @@ public class AdMob {
 		AdMobConfig = Firebase.getConfig().optJSONObject("Ads");
 		MobileAds.initialize(activity, AdMobConfig.optString("AppId"));
 
-		if (AdMobConfig.optBoolean("BannerAd", false)) { createBanner(); }
-		if (AdMobConfig.optBoolean("InterstitialAd", false)) { createInterstitial(); }
+		if (AdMobConfig.optBoolean("BannerAd", false)) {
+			createBanner();
+		}
+		if (AdMobConfig.optBoolean("InterstitialAd", false)) {
+			createInterstitial();
+		}
 		if (AdMobConfig.optBoolean("RewardedVideoAd", false)) {
 			String ad_unit_id = AdMobConfig.optString("RewardedVideoAdId", "");
 			List<String> ad_units = new ArrayList<String>();
@@ -96,22 +100,22 @@ public class AdMob {
 				ad_units.add(activity.getString(R.string.test_rewarded_video_ad_unit_id));
 			}
 
-            reward_ads = new HashMap<String, RewardedAd>();
+			reward_ads = new HashMap<String, RewardedAd>();
 			ad_units = Arrays.asList(ad_unit_id.split(","));
-		    for (String unit_id : ad_units) {
-			    reward_ads.put(unit_id, createRewardedVideo(unit_id));
-            }
+			for (String unit_id : ad_units) {
+				reward_ads.put(unit_id, createRewardedVideo(unit_id));
+			}
 		}
 
 		mAdSize = new Dictionary();
 		mAdSize.put("width", 0);
 		mAdSize.put("height", 0);
 
-        onStart();
+		onStart();
 	}
 
 	public Dictionary getBannerSize() {
-		if ((int)mAdSize.get("width") == 0 || (int)mAdSize.get("height") == 0) {
+		if ((int) mAdSize.get("width") == 0 || (int) mAdSize.get("height") == 0) {
 			Utils.d("GodotFirebase", "AdView::Not::Loaded::Yet");
 		}
 
@@ -123,7 +127,9 @@ public class AdMob {
 	}
 
 	public void createBanner() {
-		if (AdMobConfig == null) { return; }
+		if (AdMobConfig == null) {
+			return;
+		}
 
 		String ad_unit_id = AdMobConfig.optString("BannerAdId", "");
 
@@ -136,20 +142,24 @@ public class AdMob {
 	}
 
 	public void createBanner(final String ad_unit_id) {
-        mAdViewLoaded = false;
+		mAdViewLoaded = false;
 
 		// see https://github.com/godotengine/godot/issues/32827 for changes
 		// FrameLayout layout = ((Godot)activity).layout; // Getting Godots framelayout
 
 		FrameLayout.LayoutParams AdParams = new FrameLayout.LayoutParams(
-							FrameLayout.LayoutParams.MATCH_PARENT,
-							FrameLayout.LayoutParams.WRAP_CONTENT);
+				FrameLayout.LayoutParams.MATCH_PARENT,
+				FrameLayout.LayoutParams.WRAP_CONTENT);
 
-		if(mAdView != null) { layout.removeView(mAdView); }
+		if (mAdView != null) {
+			layout.removeView(mAdView);
+		}
 
 		if (AdMobConfig.optString("BannerGravity", "BOTTOM").equals("BOTTOM")) {
 			AdParams.gravity = Gravity.BOTTOM;
-		} else { AdParams.gravity = Gravity.TOP; }
+		} else {
+			AdParams.gravity = Gravity.TOP;
+		}
 
 		AdRequest.Builder adRequestB = new AdRequest.Builder();
 		adRequestB.tagForChildDirectedTreatment(true);
@@ -164,7 +174,7 @@ public class AdMob {
 
 		AdRequest adRequest = adRequestB.build();
 
-		mAdView	= new AdView(activity);
+		mAdView = new AdView(activity);
 		mAdView.setBackgroundColor(Color.TRANSPARENT);
 		mAdView.setAdUnitId(ad_unit_id);
 		mAdView.setAdSize(AdSize.SMART_BANNER);
@@ -174,7 +184,7 @@ public class AdMob {
 			public void onAdLoaded() {
 				Utils.d("GodotFirebase", "AdMob:Banner:OnAdLoaded");
 				AdSize adSize = mAdView.getAdSize();
-                mAdViewLoaded = true;
+				mAdViewLoaded = true;
 
 				mAdSize.put("width", adSize.getWidthInPixels(activity));
 				mAdSize.put("height", adSize.getHeightInPixels(activity));
@@ -196,7 +206,9 @@ public class AdMob {
 	}
 
 	public void createInterstitial() {
-		if (AdMobConfig == null) { return; }
+		if (AdMobConfig == null) {
+			return;
+		}
 
 		String ad_unit_id = AdMobConfig.optString("InterstitialAdId", "");
 
@@ -232,47 +244,47 @@ public class AdMob {
 	}
 
 	public void emitRewardedVideoStatus() {
-        for (String unit_id : reward_ads.keySet()) {
+		for (String unit_id : reward_ads.keySet()) {
 
-	        Utils.callScriptFunc("AdMob", "AdMob_Video",
-            buildStatus(unit_id, reward_ads.get(unit_id).isLoaded() ? "loaded" : "not_loaded"));
-        }
+			Utils.callScriptFunc("AdMob", "AdMob_Video",
+					buildStatus(unit_id, reward_ads.get(unit_id).isLoaded() ? "loaded" : "not_loaded"));
+		}
 	}
 
-    public Dictionary buildStatus(String unitid, String status) {
-        Dictionary dict = new Dictionary();
-        dict.put("unit_id", unitid);
-        dict.put("status", status);
-    
-        return dict;
-    }
+	public Dictionary buildStatus(String unitid, String status) {
+		Dictionary dict = new Dictionary();
+		dict.put("unit_id", unitid);
+		dict.put("status", status);
+
+		return dict;
+	}
 
 	public RewardedAd createRewardedVideo(final String unitid) {
-        RewardedAd rewardedAd = new RewardedAd(activity, unitid);
-        requestNewRewardedVideo(rewardedAd, unitid);
+		RewardedAd rewardedAd = new RewardedAd(activity, unitid);
+		requestNewRewardedVideo(rewardedAd, unitid);
 		return rewardedAd;
 	}
 
-    public boolean isBannerLoaded() {
-        return mAdViewLoaded;
+	public boolean isBannerLoaded() {
+		return mAdViewLoaded;
 	}
 
-    public boolean isInterstitialLoaded() {
-        if (mInterstitialAd != null) {
-            return mInterstitialAd.isLoaded();
-        }
-
-        Utils.d("GodotFirebase", "Interstitial:NotInitialized");
-        return false;
-    }
-
-    public boolean isRewardedAdLoaded(final String unit_id) {
-		if (!isInitialized() || reward_ads == null) {
-            return false;
+	public boolean isInterstitialLoaded() {
+		if (mInterstitialAd != null) {
+			return mInterstitialAd.isLoaded();
 		}
 
-        return reward_ads.get(unit_id).isLoaded();
-    }
+		Utils.d("GodotFirebase", "Interstitial:NotInitialized");
+		return false;
+	}
+
+	public boolean isRewardedAdLoaded(final String unit_id) {
+		if (!isInitialized() || reward_ads == null) {
+			return false;
+		}
+
+		return reward_ads.get(unit_id).isLoaded();
+	}
 
 	public void requestRewardedVideoStatus() {
 		emitRewardedVideoStatus();
@@ -280,70 +292,79 @@ public class AdMob {
 
 	public void show_rewarded_video() {
 		if (!isInitialized() || reward_ads == null) {
-            Utils.d("GodotFirebase", "AdMob:RewardedVideo:NotConfigured[ reward_ad instance is null ]");
+			Utils.d("GodotFirebase", "AdMob:RewardedVideo:NotConfigured[ reward_ad instance is null ]");
 			return;
 		}
 
-        show_rewarded_video((String)reward_ads.keySet().toArray()[0]);
-    }
+		show_rewarded_video((String) reward_ads.keySet().toArray()[0]);
+	}
 
 	public void show_rewarded_video(final String unit_id) {
 		if (!isInitialized() || reward_ads == null) {
-            Utils.d("GodotFirebase", "AdMob:RewardedVideo:NotConfigured[ reward_ad instance is null ]");
+			Utils.d("GodotFirebase", "AdMob:RewardedVideo:NotConfigured[ reward_ad instance is null ]");
 			return;
 		}
 
-        RewardedAdCallback adCallback = new RewardedAdCallback() {
-		    @Override
-            public void onUserEarnedReward(@NonNull RewardItem reward) {
-	    		Utils.d("GodotFirebase", "AdMob:Rewarded:Success");
+		RewardedAdCallback adCallback = new RewardedAdCallback() {
+			@Override
+			public void onUserEarnedReward(@NonNull RewardItem reward) {
+				Utils.d("GodotFirebase", "AdMob:Rewarded:Success");
 
-		        Dictionary ret = new Dictionary();
-    			ret.put("RewardType", reward.getType());
-        		ret.put("RewardAmount", reward.getAmount());
-	        	ret.put("unit_id", unit_id);
+				Dictionary ret = new Dictionary();
+				ret.put("RewardType", reward.getType());
+				ret.put("RewardAmount", reward.getAmount());
+				ret.put("unit_id", unit_id);
 
-		        Utils.callScriptFunc("AdMob", "AdMobReward", ret);
-    			reloadRewardedVideo(unit_id);
-		    }
+				Utils.callScriptFunc("AdMob", "AdMobReward", ret);
+				reloadRewardedVideo(unit_id);
+			}
 
-    		@Override
-	    	public void onRewardedAdClosed() {
-		    	Utils.d("GodotFirebase", "AdMob:VideoAd:Closed");
-			    Utils.callScriptFunc("AdMob", "AdMob_Video", buildStatus(unit_id, "closed"));
-    			reloadRewardedVideo(unit_id);
-	    	}
+			@Override
+			public void onRewardedAdClosed() {
+				Utils.d("GodotFirebase", "AdMob:VideoAd:Closed");
+				Utils.callScriptFunc("AdMob", "AdMob_Video", buildStatus(unit_id, "closed"));
+				reloadRewardedVideo(unit_id);
+			}
 
-    		@Override
-	    	public void onRewardedAdOpened() {
-		    	Utils.d("GodotFirebase", "AdMob:VideoAd:Opended");
-    		}
+			@Override
+			public void onRewardedAdOpened() {
+				Utils.d("GodotFirebase", "AdMob:VideoAd:Opended");
+			}
 
-        	@Override
-	        public void onRewardedAdFailedToShow(int errorCode) {
-			    Utils.d("GodotFirebase", "Reward:VideoAd:FailedToShow");
-    		}
-        };
+			@Override
+			public void onRewardedAdFailedToShow(int errorCode) {
+				Utils.d("GodotFirebase", "Reward:VideoAd:FailedToShow");
+			}
+		};
 
-        rewarded_meta_data.put("unit_id", unit_id);
-        RewardedAd reward_ad = reward_ads.get(unit_id);
-		if (reward_ad.isLoaded()) { reward_ad.show(activity, adCallback); }
-		else { Utils.d("GodotFirebase", "AdMob:RewardedVideo:NotLoaded"); }
+		rewarded_meta_data.put("unit_id", unit_id);
+		RewardedAd reward_ad = reward_ads.get(unit_id);
+		if (reward_ad.isLoaded()) {
+			reward_ad.show(activity, adCallback);
+		} else {
+			Utils.d("GodotFirebase", "AdMob:RewardedVideo:NotLoaded");
+		}
 	}
 
 	public void show_banner_ad(final boolean show) {
-		if (!isInitialized() || mAdView == null) { return; }
+		if (!isInitialized() || mAdView == null) {
+			return;
+		}
 
 		// Show Ad Banner here
 
 		if (show) {
-			if (mAdView.isEnabled()) { mAdView.setEnabled(true); }
+			if (mAdView.isEnabled()) {
+				mAdView.setEnabled(true);
+			}
 			if (mAdView.getVisibility() == View.INVISIBLE) {
 				Utils.d("GodotFirebase", "AdMob:Visiblity:On");
 				mAdView.setVisibility(View.VISIBLE);
 			}
 		} else {
-			if (mAdView.isEnabled()) { mAdView.setEnabled(false); }
+			if (mAdView.isEnabled()) {
+				mAdView.setEnabled(false);
+			}
 			if (mAdView.getVisibility() != View.INVISIBLE) {
 				Utils.d("GodotFirebase", "AdMob:Visiblity:Off");
 				mAdView.setVisibility(View.INVISIBLE);
@@ -352,33 +373,38 @@ public class AdMob {
 	}
 
 	public void show_interstitial_ad() {
-		if (!isInitialized() || mInterstitialAd == null) { return; }
+		if (!isInitialized() || mInterstitialAd == null) {
+			return;
+		}
 
 		// Show interstitial ad
 
-		if (mInterstitialAd.isLoaded()) { mInterstitialAd.show(); }
-		else { Utils.d("GodotFirebase", "AdMob:Interstitial:NotLoaded"); }
+		if (mInterstitialAd.isLoaded()) {
+			mInterstitialAd.show();
+		} else {
+			Utils.d("GodotFirebase", "AdMob:Interstitial:NotLoaded");
+		}
 	}
 
 	public void reloadRewardedVideo(final String unitid) {
-        if (reward_ads == null) {
-            return;
+		if (reward_ads == null) {
+			return;
 		}
-		
-		if (reload_count <= 3) {
-            Utils.d("GodotFirebase", "AdMob:RewardedVideo:Reloading_RewardedVideo_Request");
 
-            RewardedAd reward_ad = reward_ads.get(unitid);
-    		requestNewRewardedVideo(reward_ad, unitid);
-            
-            reload_count += 1;
-        }
+		if (reload_count <= 3) {
+			Utils.d("GodotFirebase", "AdMob:RewardedVideo:Reloading_RewardedVideo_Request");
+
+			RewardedAd reward_ad = reward_ads.get(unitid);
+			requestNewRewardedVideo(reward_ad, unitid);
+
+			reload_count += 1;
+		}
 	}
 
 	private void requestNewRewardedVideo(RewardedAd mrv, final String unitid) {
 		Utils.d("GodotFirebase", "AdMob:Loading:RewardedAd:For: " + unitid);
 
-        mAdRewardLoaded = false;
+		mAdRewardLoaded = false;
 		AdRequest.Builder adRB = new AdRequest.Builder();
 
 		// Covered with the test ad ID
@@ -387,24 +413,24 @@ public class AdMob {
 			adRB.addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
 			adRB.addTestDevice(AdMobConfig.optString("TestDevice", Utils.getDeviceId(activity)));
 		}
-		 */
+		*/
 
-		mrv.loadAd(adRB.build(),  new RewardedAdLoadCallback() {
-     	    @Override
-    		public void onRewardedAdLoaded() {
-    			Utils.d("GodotFirebase", "AdMob:Video:Loaded");
-            
-                mAdRewardLoaded = true;
-			    Utils.callScriptFunc("AdMob", "AdMob_Video", buildStatus(unitid, "loaded"));
-		    }
+		mrv.loadAd(adRB.build(), new RewardedAdLoadCallback() {
+			@Override
+			public void onRewardedAdLoaded() {
+				Utils.d("GodotFirebase", "AdMob:Video:Loaded");
 
-    		@Override
-	    	public void onRewardedAdFailedToLoad(int errorCode) {
-		    	Utils.d("GodotFirebase", "AdMob:VideoLoad:Failed");
-			    Utils.callScriptFunc("AdMob", "AdMob_Video", buildStatus(unitid, "load_failed"));
-    			//reloadRewardedVideo(unitid);
-	    	}
-        });
+				mAdRewardLoaded = true;
+				Utils.callScriptFunc("AdMob", "AdMob_Video", buildStatus(unitid, "loaded"));
+			}
+
+			@Override
+			public void onRewardedAdFailedToLoad(int errorCode) {
+				Utils.d("GodotFirebase", "AdMob:VideoLoad:Failed");
+				Utils.callScriptFunc("AdMob", "AdMob_Video", buildStatus(unitid, "load_failed"));
+				//reloadRewardedVideo(unitid);
+			}
+		});
 	}
 
 	private void requestNewInterstitial() {
@@ -433,43 +459,30 @@ public class AdMob {
 	}
 
 	public void onStart() {
-        reload_count = 0;
-        rewarded_meta_data = new Dictionary();
+		reload_count = 0;
+		rewarded_meta_data = new Dictionary();
 	}
 
 	public void onPause() {
-		if (mAdView != null) { mAdView.pause(); }
+		if (mAdView != null) {
+			mAdView.pause();
+		}
 		//if (reward_ad != null) { reward_ad.pause(activity); }
 	}
 
 	public void onResume() {
-		if (mAdView != null) { mAdView.resume(); }
+		if (mAdView != null) {
+			mAdView.resume();
+		}
 		//if (reward_ad != null) { reward_ad.resume(activity); }
 	}
 
 	public void onStop() {
-        reload_count = 0;
+		reload_count = 0;
 
-		if (mAdView != null) { mAdView.destroy(); }
+		if (mAdView != null) {
+			mAdView.destroy();
+		}
 		//if (reward_ad != null) { reward_ad.destroy(activity); }
 	}
-
-    private int reload_count = 0;
-
-	private static Activity activity = null;
-	private static AdMob mInstance = null;
-
-    private boolean mAdRewardLoaded = false;
-    private boolean mAdViewLoaded = false;
-	private HashMap<String, RewardedAd> reward_ads = null;
-
-	private AdView mAdView = null;
-	private InterstitialAd mInterstitialAd = null;
-	private Dictionary mAdSize = null;
-
-	private FirebaseApp mFirebaseApp = null;
-
-	private JSONObject AdMobConfig = null;
-
-    static private Dictionary rewarded_meta_data = null;
 }

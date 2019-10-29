@@ -91,9 +91,9 @@ public class AdMob {
 			String ad_unit_id = AdMobConfig.optString("RewardedVideoAdId", "");
 			List<String> ad_units = new ArrayList<String>();
 
-			if (ad_unit_id.length() <= 0) {
-				Utils.d("GodotFirebase", "AdMob:RewardedVideo:UnitId:NotProvided:AddingDefault");
-				ad_units.add(activity.getString(R.string.rewarded_video_ad_unit_id));
+			if (ad_unit_id.length() <= 0 || AdMobConfig.optBoolean("TestAds", false)) {
+				Utils.d("GodotFirebase", "AdMob:RewardedVideo:UnitId:NotProvidedOrTestAds:AddingTestAd");
+				ad_units.add(activity.getString(R.string.test_rewarded_video_ad_unit_id));
 			}
 
             reward_ads = new HashMap<String, RewardedAd>();
@@ -127,9 +127,9 @@ public class AdMob {
 
 		String ad_unit_id = AdMobConfig.optString("BannerAdId", "");
 
-		if (ad_unit_id.length() <= 0) {
-			Utils.d("GodotFirebase", "AdMob:Banner:UnitId:NotProvided:AddingDefault");
-			ad_unit_id = activity.getString(R.string.banner_ad_unit_id);
+		if (ad_unit_id.length() <= 0 || AdMobConfig.optBoolean("TestAds", false)) {
+			Utils.d("GodotFirebase", "AdMob:Banner:UnitId:NotProvidedOrTestAds:AddingTestAd");
+			ad_unit_id = activity.getString(R.string.test_banner_ad_unit_id);
 		}
 
 		createBanner(ad_unit_id);
@@ -154,10 +154,13 @@ public class AdMob {
 		AdRequest.Builder adRequestB = new AdRequest.Builder();
 		adRequestB.tagForChildDirectedTreatment(true);
 
+		// Covered with the test ad ID
+		/*
 		if (BuildConfig.DEBUG || AdMobConfig.optBoolean("TestAds", false)) {
 			adRequestB.addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
 			adRequestB.addTestDevice(AdMobConfig.optString("TestDevice", Utils.getDeviceId(activity)));
 		}
+		*/
 
 		AdRequest adRequest = adRequestB.build();
 
@@ -197,9 +200,9 @@ public class AdMob {
 
 		String ad_unit_id = AdMobConfig.optString("InterstitialAdId", "");
 
-		if (ad_unit_id.length() <= 0) {
-			Utils.d("GodotFirebase", "AdMob:Interstitial:UnitId:NotProvided:AddingDefault");
-			ad_unit_id = activity.getString(R.string.interstitial_ad_unit_id);
+		if (ad_unit_id.length() <= 0 || AdMobConfig.optBoolean("TestAds", false)) {
+			Utils.d("GodotFirebase", "AdMob:Interstitial:UnitId:NotProvidedOrTestAds:AddingTestAd");
+			ad_unit_id = activity.getString(R.string.test_interstitial_ad_unit_id);
 		}
 
 		mInterstitialAd = new InterstitialAd(activity);
@@ -378,10 +381,13 @@ public class AdMob {
         mAdRewardLoaded = false;
 		AdRequest.Builder adRB = new AdRequest.Builder();
 
+		// Covered with the test ad ID
+		/*
 		if (BuildConfig.DEBUG || AdMobConfig.optBoolean("TestAds", false)) {
 			adRB.addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
 			adRB.addTestDevice(AdMobConfig.optString("TestDevice", Utils.getDeviceId(activity)));
 		}
+		 */
 
 		mrv.loadAd(adRB.build(),  new RewardedAdLoadCallback() {
      	    @Override
@@ -404,10 +410,13 @@ public class AdMob {
 	private void requestNewInterstitial() {
 		AdRequest.Builder adRB = new AdRequest.Builder();
 
+		// Covered with the test ad ID
+		/*
 		if (BuildConfig.DEBUG || AdMobConfig.optBoolean("TestAds", false)) {
 			adRB.addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
 			adRB.addTestDevice(AdMobConfig.optString("TestDevice", Utils.getDeviceId(activity)));
 		}
+		*/
 
 		AdRequest adRequest = adRB.build();
 

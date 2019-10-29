@@ -36,6 +36,8 @@ Steps to follow to make this plugin work:
 - now you should be able to build
  - in Godot with your project opened select 'Project > Export'
  - add an Android Export preset and enable 'Use Custom Build'
+ - in the project settings ('Project > Project Settings') add to 'Android: Modules' the following line
+  - org/godotengine/godot/Firebase,org/godotengine/godot/SQLBridge
 
-That's it. For further instructions on how to call AdMob functions refer to https://github.com/FrogSquare/GodotFireBase
+That's it. For further instructions on how to call AdMob functions refer to https://github.com/FrogSquare/GodotFireBase. Just remember to change the calls from 'FireBase' to 'Firebase' (notice the capital B is now lower-case in this plugin).
 

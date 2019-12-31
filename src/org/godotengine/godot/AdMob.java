@@ -46,7 +46,6 @@ public class AdMob {
     private static AdMob mInstance = null;
     private static Dictionary rewarded_meta_data = null;
     FrameLayout layout = null;
-    private int reload_count = 0;
     private boolean mAdRewardLoaded = false;
     private boolean mAdViewLoaded = false;
     private HashMap<String, RewardedAd> reward_ads = null;
@@ -89,13 +88,14 @@ public class AdMob {
 
             if (ad_unit_id.length() <= 0 || AdMobConfig.optBoolean("TestAds", false)) {
                 Utils.d("GodotFirebase", "AdMob:RewardedVideo:UnitId:NotProvidedOrTestAds:AddingTestAd");
-                ad_units.add(activity.getString(R.string.test_rewarded_video_ad_unit_id));
+                ad_unit_id += ","+activity.getString(R.string.test_rewarded_video_ad_unit_id);
             }
 
             reward_ads = new HashMap<String, RewardedAd>();
             ad_units = Arrays.asList(ad_unit_id.split(","));
             for (String unit_id : ad_units) {
-                reward_ads.put(unit_id, createRewardedVideo(unit_id));
+                Utils.d("GodotFirebase", "rewards_ads_put: " + unit_id);
+                reward_ads.put(unit_id, requestNewRewardedVideo(unit_id));
             }
         }
 
@@ -251,12 +251,6 @@ public class AdMob {
         return dict;
     }
 
-    public RewardedAd createRewardedVideo(final String unitid) {
-        RewardedAd rewardedAd = new RewardedAd(activity, unitid);
-        requestNewRewardedVideo(rewardedAd, unitid);
-        return rewardedAd;
-    }
-
     public boolean isBannerLoaded() {
         return mAdViewLoaded;
     }
@@ -308,14 +302,14 @@ public class AdMob {
                 ret.put("unit_id", unit_id);
 
                 Utils.callScriptFunc("AdMob", "AdMobReward", ret);
-                reloadRewardedVideo(unit_id);
             }
 
             @Override
             public void onRewardedAdClosed() {
                 Utils.d("GodotFirebase", "AdMob:VideoAd:Closed");
                 Utils.callScriptFunc("AdMob", "AdMob_Video", buildStatus(unit_id, "closed"));
-                reloadRewardedVideo(unit_id);
+                reloadRewardedVideo(AdMobConfig.optBoolean("TestAds", false) ? 
+                    activity.getString(R.string.test_rewarded_video_ad_unit_id) : unit_id);
             }
 
             @Override
@@ -329,8 +323,18 @@ public class AdMob {
             }
         };
 
-        rewarded_meta_data.put("unit_id", unit_id);
-        RewardedAd reward_ad = reward_ads.get(unit_id);
+        RewardedAd reward_ad;
+
+        //If it is a test, call a test ads, but pass the actual ad id called to the callback.
+        if (AdMobConfig.optBoolean("TestAds", false)) {
+            String test_unit_id = activity.getString(R.string.test_rewarded_video_ad_unit_id);
+            rewarded_meta_data.put("unit_id", test_unit_id);
+            reward_ad = reward_ads.get(test_unit_id);            
+        } else {
+            rewarded_meta_data.put("unit_id", unit_id);
+            reward_ad = reward_ads.get(unit_id);
+        }
+
         if (reward_ad.isLoaded()) {
             reward_ad.show(activity, adCallback);
         } else {
@@ -370,7 +374,6 @@ public class AdMob {
         }
 
         // Show interstitial ad
-
         if (mInterstitialAd.isLoaded()) {
             mInterstitialAd.show();
         } else {
@@ -383,31 +386,23 @@ public class AdMob {
             return;
         }
 
-        if (reload_count <= 3) {
-            Utils.d("GodotFirebase", "AdMob:RewardedVideo:Reloading_RewardedVideo_Request");
-
-            RewardedAd reward_ad = reward_ads.get(unitid);
-            requestNewRewardedVideo(reward_ad, unitid);
-
-            reload_count += 1;
-        }
+        Utils.d("GodotFirebase", "AdMob:RewardedVideo:Reloading_RewardedVideo_Request");
+        reward_ads.put(unitid, requestNewRewardedVideo(unitid));
     }
 
-    private void requestNewRewardedVideo(RewardedAd mrv, final String unitid) {
+    private RewardedAd requestNewRewardedVideo(final String unitid) {
         Utils.d("GodotFirebase", "AdMob:Loading:RewardedAd:For: " + unitid);
-
         mAdRewardLoaded = false;
+        RewardedAd rewardedAd = new RewardedAd(activity, unitid);
         AdRequest.Builder adRB = new AdRequest.Builder();
 
         // Covered with the test ad ID
-		/*
 		if (BuildConfig.DEBUG || AdMobConfig.optBoolean("TestAds", false)) {
 			adRB.addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
 			adRB.addTestDevice(AdMobConfig.optString("TestDevice", Utils.getDeviceId(activity)));
 		}
-		*/
 
-        mrv.loadAd(adRB.build(), new RewardedAdLoadCallback() {
+        rewardedAd.loadAd(adRB.build(), new RewardedAdLoadCallback() {
             @Override
             public void onRewardedAdLoaded() {
                 Utils.d("GodotFirebase", "AdMob:Video:Loaded");
@@ -418,23 +413,22 @@ public class AdMob {
 
             @Override
             public void onRewardedAdFailedToLoad(int errorCode) {
-                Utils.d("GodotFirebase", "AdMob:VideoLoad:Failed");
+                Utils.d("GodotFirebase", "AdMob:VideoLoad:Failed" + errorCode);
                 Utils.callScriptFunc("AdMob", "AdMob_Video", buildStatus(unitid, "load_failed"));
                 //reloadRewardedVideo(unitid);
             }
         });
+        return rewardedAd;
     }
 
     private void requestNewInterstitial() {
         AdRequest.Builder adRB = new AdRequest.Builder();
 
         // Covered with the test ad ID
-		/*
 		if (BuildConfig.DEBUG || AdMobConfig.optBoolean("TestAds", false)) {
 			adRB.addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
 			adRB.addTestDevice(AdMobConfig.optString("TestDevice", Utils.getDeviceId(activity)));
 		}
-		*/
 
         AdRequest adRequest = adRB.build();
 
@@ -451,7 +445,6 @@ public class AdMob {
     }
 
     public void onStart() {
-        reload_count = 0;
         rewarded_meta_data = new Dictionary();
     }
 
@@ -470,8 +463,6 @@ public class AdMob {
     }
 
     public void onStop() {
-        reload_count = 0;
-
         if (mAdView != null) {
             mAdView.destroy();
         }

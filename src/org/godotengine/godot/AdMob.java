@@ -397,10 +397,10 @@ public class AdMob {
         AdRequest.Builder adRB = new AdRequest.Builder();
 
         // Covered with the test ad ID
-		if (BuildConfig.DEBUG || AdMobConfig.optBoolean("TestAds", false)) {
-			adRB.addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
-			adRB.addTestDevice(AdMobConfig.optString("TestDevice", Utils.getDeviceId(activity)));
-		}
+	if (BuildConfig.DEBUG || AdMobConfig.optBoolean("TestAds", false)) {
+		adRB.addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
+		adRB.addTestDevice(AdMobConfig.optString("TestDevice", Utils.getDeviceId(activity)));
+	}
 
         rewardedAd.loadAd(adRB.build(), new RewardedAdLoadCallback() {
             @Override

@@ -88,7 +88,7 @@ public class AdMob {
 
             if (ad_unit_id.length() <= 0 || AdMobConfig.optBoolean("TestAds", false)) {
                 Utils.d("GodotFirebase", "AdMob:RewardedVideo:UnitId:NotProvidedOrTestAds:AddingTestAd");
-                ad_unit_id += ","+activity.getString(R.string.test_rewarded_video_ad_unit_id);
+                ad_unit_id += "," + activity.getString(R.string.test_rewarded_video_ad_unit_id);
             }
 
             reward_ads = new HashMap<String, RewardedAd>();
@@ -308,8 +308,8 @@ public class AdMob {
             public void onRewardedAdClosed() {
                 Utils.d("GodotFirebase", "AdMob:VideoAd:Closed");
                 Utils.callScriptFunc("AdMob", "AdMob_Video", buildStatus(unit_id, "closed"));
-                reloadRewardedVideo(AdMobConfig.optBoolean("TestAds", false) ? 
-                    activity.getString(R.string.test_rewarded_video_ad_unit_id) : unit_id);
+                reloadRewardedVideo(AdMobConfig.optBoolean("TestAds", false) ?
+                        activity.getString(R.string.test_rewarded_video_ad_unit_id) : unit_id);
             }
 
             @Override
@@ -329,7 +329,7 @@ public class AdMob {
         if (AdMobConfig.optBoolean("TestAds", false)) {
             String test_unit_id = activity.getString(R.string.test_rewarded_video_ad_unit_id);
             rewarded_meta_data.put("unit_id", test_unit_id);
-            reward_ad = reward_ads.get(test_unit_id);            
+            reward_ad = reward_ads.get(test_unit_id);
         } else {
             rewarded_meta_data.put("unit_id", unit_id);
             reward_ad = reward_ads.get(unit_id);
@@ -397,10 +397,10 @@ public class AdMob {
         AdRequest.Builder adRB = new AdRequest.Builder();
 
         // Covered with the test ad ID
-	if (BuildConfig.DEBUG || AdMobConfig.optBoolean("TestAds", false)) {
-		adRB.addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
-		adRB.addTestDevice(AdMobConfig.optString("TestDevice", Utils.getDeviceId(activity)));
-	}
+        if (BuildConfig.DEBUG || AdMobConfig.optBoolean("TestAds", false)) {
+            adRB.addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
+            adRB.addTestDevice(AdMobConfig.optString("TestDevice", Utils.getDeviceId(activity)));
+        }
 
         rewardedAd.loadAd(adRB.build(), new RewardedAdLoadCallback() {
             @Override
@@ -425,10 +425,10 @@ public class AdMob {
         AdRequest.Builder adRB = new AdRequest.Builder();
 
         // Covered with the test ad ID
-		if (BuildConfig.DEBUG || AdMobConfig.optBoolean("TestAds", false)) {
-			adRB.addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
-			adRB.addTestDevice(AdMobConfig.optString("TestDevice", Utils.getDeviceId(activity)));
-		}
+        if (BuildConfig.DEBUG || AdMobConfig.optBoolean("TestAds", false)) {
+            adRB.addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
+            adRB.addTestDevice(AdMobConfig.optString("TestDevice", Utils.getDeviceId(activity)));
+        }
 
         AdRequest adRequest = adRB.build();
 

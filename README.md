@@ -21,15 +21,7 @@ Steps to follow to make this plugin work:
     - setting this to true ignores the IDs (`BannerAdId`, `InterstitialAdId`, `RewardedVideoAdId`) and fetches [official AdMob test ads](https://developers.google.com/admob/android/test-ads)
 
 - edit `[GODOT-PROJECT]/android/godot-plugin-firebase/gradle.conf`
-  - if you are not interested in AdMob's mediation feature (with Unity ads), comment out following two lines from `[GODOT-PROJECT]/android/godot-plugin-firebase/gradle.conf` (just put two slashes at the beginning of the lines -> //)
-  
-   `implementation 'com.google.ads.mediation:unity:3.2.0.1'`
-  
-   `implementation 'com.unity3d.ads:unity-ads:3.2.0'`
-  
-  - if you are not interested in other stuff like Firestore, etc. comment out their lines from `[GODOT-PROJECT]/android/godot-plugin-firebase/gradle.conf` (just put two slashes at the beginning of the lines -> //)
- 
- - edit your applicationId
+  - edit your applicationId
  
   `applicationId 'com.mycompany.myappname'`
 

@@ -23,7 +23,7 @@ Steps to follow to make this plugin work:
 - edit `[GODOT-PROJECT]/android/godot-plugin-firebase/gradle.conf`
   - edit your applicationId
  
-  `applicationId 'com.mycompany.myappname'`
+     `applicationId 'com.mycompany.myappname'`
 
 - edit `[GODOT-PROJECT]/android/godot-plugin-firebase/AndroidManifest.conf`
   - edit the following section to match your AdMob App ID

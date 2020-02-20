@@ -1,3 +1,5 @@
+### This repository is deprecated. A new version, rewritten from scratch, can be found here:<br />https://github.com/yalcin-ata/godot-android-module-firebase
+
 # godot-plugin-firebase
 This plugin is based on https://github.com/FrogSquare/GodotFireBase, so all credit goes to FrogSquare.
 
